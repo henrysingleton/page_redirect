@@ -29,18 +29,18 @@
 			return array(
 				array(
 					'page'		=> '/frontend/',
-					'delegate'	=> 'FrontendOutputPostGenerate',
-					'callback'	=> 'scanRedirect'
+					'delegate'	=> 'FrontendPageResolved',
+					'callback'	=> 'checkRedirectPageType'
 				),
 				array(
 					'page'		=> '/frontend/',
-					'delegate'	=> 'FrontendPageResolved',
-					'callback'	=> 'checkRedirectPage'
+					'delegate'	=> 'FrontendOutputPostGenerate',
+					'callback'	=> 'scanURL'
 				)
 			);
 		}
 		
-		public function checkRedirectPage($page) {
+		public function checkRedirectPageType($page) {
 			if (is_array($page) &&
 				is_array($page['page_data']) &&
 				array_key_exists('type', $page['page_data']) &&
@@ -50,15 +50,16 @@
 			}
 		}
 		
-		public function scanRedirect($page) {
-			if ($this->redirectTrigger !== true) return;
-			$content = $page['output'];
-			if (
-					$content &&
-					strpos($content, '<') !== 0 && 
-					preg_match('/^[^\s:\/?#]+:(?:\/{2,3})?[^\s.\/?#]+(?:\.[^\s.\/?#]+)*(?:\/[^\s?#]*\??[^\s?#]*(#[^\s#]*)?)?$/', $content)
-				) {
-				header("Location: ".$content,TRUE,301);
+		public function scanURL($page) {
+			if ($this->redirectTrigger === true) {
+				$content = $page['output'];
+				if (
+						strpos($content, '<') !== 0 && 
+						preg_match('/^[^\s:\/?#]+:(?:\/{2,3})?[^\s.\/?#]+(?:\.[^\s.\/?#]+)*(?:\/[^\s?#]*\??[^\s?#]*(#[^\s#]*)?)?$/', $content)
+					) {
+					$this->addHeaderToPage('HTTP/1.1 301 Moved Permanently');
+					$this->addHeaderToPage('Location: '.$content);
+				}
 			}
 		}		
 				
